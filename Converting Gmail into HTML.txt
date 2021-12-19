@@ -1,0 +1,129 @@
+# Remember to turn on your less secure app access in your gmail security setting 
+
+import imaplib
+import email
+import os
+import mimetypes
+
+# access to gmail protocol 
+mail = imaplib.IMAP4_SSL('imap.gmail.com')
+
+# login access
+username = input('Username (e.g.zyoungg31@gmail.com)')
+password = input('password')
+mail.login(username,password)
+
+# Access to the inbox section 
+mail.select("inbox")
+
+# Define the save path 
+input_save_path = input("Save Path (e.g. /Users/zteh0/Desktop/Web Development): ")
+
+# define "filter by"
+method = input("You would like to filter by? (e.g. All, Subject or Sender)")
+
+# checking if the metod is valid 
+while method not in ['All','Latest','Subject', 'Sender']:
+    method =  input("You would like to filter by? (e.g. All, Latest, Subject or Sender)")
+
+
+# remove invalid sysmbol in the email title for document creation 
+def remove_invalid_sysmbols (subject_):
+    if "|" in subject_ : 
+        subject_ = subject_.replace("|","")
+    elif "?" in subject_ : 
+        subject_ = subject_.replace("?","")
+    elif ":" in subject_ : 
+        subject_ = subject_.replace(":","")
+    elif subject_[-1] == " ":  
+        subject_ = subject_[0:-1]
+    
+    return subject_
+
+# Search for emails by specific subject
+def by_subject (): 
+    result,data = mail.uid('search', None, "ALL")
+    inbox_item_list = data[0].split()
+    subject_input = input("Subject")
+    counter = 0 
+                           
+    for item in inbox_item_list: 
+        result2,email_data = mail.uid('fetch', item, '(RFC822)')
+        raw_email = email_data[0][1].decode("utf-8")
+        email_message = email.message_from_string(raw_email)
+        subject_ = email_message['Subject']
+        if subject_ == subject_input : 
+            counter +=1
+            subject_ = remove_invalid_sysmbols(subject_)
+            date_ = email_message['date']
+	    # to get the last part of the email_message so the write function can work 
+            for part in email_message.walk():
+                if part.get_content_maintype() == "multipart":
+                    continue 
+            save_path = os.path.join(input_save_path, subject_)
+            save_path_2 = os.path.join(save_path, subject_)
+	    # to save the file in html 
+            save_path_3 = save_path_2 + ".html"
+            if not os.path.exists(save_path):
+                os.makedirs(save_path)
+            with open(save_path_3, 'wb') as fp:
+                fp.write(part.get_payload(decode=True))
+    if counter == 0 : 
+        print("No emails found!")
+
+# Search for emails from specific senders
+def by_sender (): 
+    result,data = mail.uid('search', None, input("Sender (e.g. FROM griter@easimeru.com): "))
+    inbox_item_list = data[0].split()
+
+    for item in inbox_item_list: 
+        result2,email_data = mail.uid('fetch', item, '(RFC822)')
+        raw_email = email_data[0][1].decode("utf-8")
+        email_message = email.message_from_string(raw_email)
+        subject_ = email_message['Subject']
+        subject_ = remove_invalid_sysmbols(subject_)
+	# to get the last part of the email_message so the write function can work 
+        for part in email_message.walk():
+            if part.get_content_maintype() == "multipart":
+                continue 
+        save_path = os.path.join(input_save_path, subject_)
+        save_path_2 = os.path.join(save_path, subject_)
+	# to save the file in html 
+        save_path_3 = save_path_2 + ".html"
+        if not os.path.exists(save_path):
+            os.makedirs(save_path)
+        with open(save_path_3, 'wb') as fp:
+            fp.write(part.get_payload(decode=True))
+    
+# Get all emails in the inbox    
+def by_all ():
+    result,data = mail.uid('search', None, "ALL")
+    inbox_item_list = data[0].split()
+
+    for item in inbox_item_list: 
+        result2,email_data = mail.uid('fetch', item, '(RFC822)')
+        raw_email = email_data[0][1].decode("utf-8")
+        email_message = email.message_from_string(raw_email)
+        subject_ = email_message['Subject']
+        subject_ = remove_invalid_sysmbols(subject_)
+	# to get the last part of the email_message so the write function can work 
+        for part in email_message.walk():
+            if part.get_content_maintype() == "multipart":
+                continue 
+        save_path = os.path.join(input_save_path, subject_)
+        save_path_2 = os.path.join(save_path, subject_)
+	# to save the file in html 
+        save_path_3 = save_path_2 + ".html"
+        if not os.path.exists(save_path):
+            os.makedirs(save_path)
+        with open(save_path_3, 'wb') as fp:
+            fp.write(part.get_payload(decode=True))
+
+
+# To run function 
+if method == "Subject":
+    by_subject()
+elif method == "Sender":
+    by_sender()
+elif method == "All":
+    by_all()
